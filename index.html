@@ -58,7 +58,7 @@
   </div>
 
 <script>
-const sheetURL = "https://script.google.com/macros/s/AKfycbyYLNRPLP6sA8l3CUOotAtBHkjL4YAAigVdfw3qrj0ctnDRwZYui6lJLVhtoXhSWLRvvQ/exec";
+const sheetURL = "https://script.google.com/macros/s/AKfycbxjXCUQ2ppaugjvESsJYf0Aq_2RKjNMkSSYfXHOJDIx4YWmwcc6c01860pxRZx6Jr8w6g/exec";
 
 const now = new Date();
 const kst = new Date(now.getTime() + 9*60*60*1000);
@@ -88,20 +88,17 @@ function showOverlay(){
 
 function submitAnswer(answer){
   if(!selectedGroup){ alert("먼저 어떤 친구인지 선택해주세요!"); return; }
-  const timestamp = new Date().toISOString();
   showOverlay();
   fetch(sheetURL, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date:today, time:timestamp, group:selectedGroup, answer:answer})
+    body: JSON.stringify({date:today, group:selectedGroup, answer:answer})
   })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.status!=="ok") console.error("응답 기록 실패:",data);
-    lastAnswer={answer, timestamp};
-    updateCountsFromSheet();
-  })
+  .then(res=>res.text())
+  .then(txt=>console.log(txt))
   .catch(console.error);
+  lastAnswer={answer, timestamp:today};
+  updateCountsFromSheet();
 }
 
 function cancelAnswer(){
@@ -109,15 +106,13 @@ function cancelAnswer(){
   fetch(sheetURL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date:today, time:lastAnswer.timestamp, group:selectedGroup, answer:"취소"})
+    body: JSON.stringify({date:today, group:selectedGroup, answer:"취소"})
   })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.status!=="ok") console.error("응답 취소 실패:",data);
-    lastAnswer=null;
-    updateCountsFromSheet();
-  })
+  .then(res=>res.text())
+  .then(txt=>console.log(txt))
   .catch(console.error);
+  lastAnswer=null;
+  updateCountsFromSheet();
 }
 
 function updateCountsFromSheet(){
