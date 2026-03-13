@@ -40,7 +40,7 @@
   </div>
 
   <div class="question" id="questionSection" style="display:none;">
-    안전체험교육을 통해<br><strong>위험한 상황에서 어떻게 행동해야 하는지</strong><br>잘 알게 되었나요?
+    안전체험교육를 통해<br><strong>위험한 상황에서 어떻게 행동해야 하는지</strong><br>잘 알게 되었나요?
     <div class="answer-buttons">
       <button class="green" onclick="submitAnswer('O')">O</button>
       <button class="yellow" onclick="submitAnswer('△')">△</button>
@@ -71,6 +71,7 @@ document.getElementById("weekday").textContent = weekDay[dayOfWeek];
 let selectedGroup = "";
 let lastAnswer = null;
 
+// 그룹 선택
 function selectGroup(group){
   selectedGroup = group;
   document.getElementById("selectedGroup").textContent = group;
@@ -79,6 +80,7 @@ function selectGroup(group){
   updateCountsFromSheet();
 }
 
+// 오버레이 표시
 function showOverlay(message="응답이 완료되었습니다"){
   const overlay = document.getElementById("overlay");
   overlay.textContent = message;
@@ -86,6 +88,7 @@ function showOverlay(message="응답이 완료되었습니다"){
   setTimeout(()=>{ overlay.style.display="none"; }, 1000);
 }
 
+// 답변 제출
 function submitAnswer(answer){
   if(!selectedGroup){ alert("먼저 어떤 친구인지 선택해주세요!"); return; }
   showOverlay();
@@ -96,12 +99,16 @@ function submitAnswer(answer){
     .then(txt=>console.log(txt))
     .catch(console.error);
 
-  lastAnswer={answer, timestamp:today};
+  lastAnswer = {answer, timestamp:today};
   updateCountsFromSheet();
 }
 
+// 답변 취소
 function cancelAnswer(){
-  if(!lastAnswer){ alert("취소할 응답이 없습니다!"); return; }
+  if(!selectedGroup){ 
+    alert("먼저 그룹을 선택해주세요!"); 
+    return; 
+  }
 
   const url = `${sheetURL}?date=${today}&group=${selectedGroup}&answer=취소`;
   fetch(url)
@@ -109,7 +116,7 @@ function cancelAnswer(){
     .then(txt=>console.log(txt))
     .catch(console.error);
 
-  lastAnswer=null;
+  lastAnswer = null;
 
   // 취소 완료 오버레이
   showOverlay("응답이 취소되었습니다");
@@ -117,14 +124,16 @@ function cancelAnswer(){
   updateCountsFromSheet();
 }
 
+// 시트에서 통계 가져오기
 function updateCountsFromSheet(){
   fetch(sheetURL)
     .then(res=>res.json())
     .then(data=>{
       if(!Array.isArray(data) || data.length<2) return;
       const rows = data.slice(1);
-      const daily={"O":0,"△":0,"X":0};
-      const monthly={"O":0,"△":0,"X":0};
+      const daily={"O":0,"△":0,"X":0,"취소":0};
+      const monthly={"O":0,"△":0,"X":0,"취소":0};
+
       rows.forEach(row=>{
         const [date, group, answer]=row;
         if(group===selectedGroup){
@@ -132,11 +141,13 @@ function updateCountsFromSheet(){
           if(date.startsWith(monthKey)) monthly[answer]=(monthly[answer]||0)+1;
         }
       });
+
       drawStatsTable(daily, monthly);
     })
     .catch(console.error);
 }
 
+// 통계 보기
 function requestPassword(){
   const pwd = prompt("관리자 비밀번호를 입력하세요:");
   if(pwd==="0219"){ 
@@ -146,6 +157,7 @@ function requestPassword(){
   else alert("비밀번호가 틀렸습니다.");
 }
 
+// 통계 테이블 그리기
 function drawStatsTable(daily, monthly){
   const totalMonthly = Object.values(monthly).reduce((a,b)=>a+b,0)||1;
   const makeTable = (title,data,total)=>`
@@ -155,6 +167,7 @@ function drawStatsTable(daily, monthly){
       <tr><td>O</td><td>${data["O"]||0}</td><td>${((data["O"]||0)/total*100).toFixed(1)}%</td></tr>
       <tr><td>△</td><td>${data["△"]||0}</td><td>${((data["△"]||0)/total*100).toFixed(1)}%</td></tr>
       <tr><td>X</td><td>${data["X"]||0}</td><td>${((data["X"]||0)/total*100).toFixed(1)}%</td></tr>
+      <tr><td>취소</td><td>${data["취소"]||0}</td><td>${((data["취소"]||0)/total*100).toFixed(1)}%</td></tr>
       <tr><th>총합</th><th>${total}</th><th>100%</th></tr>
     </table>`;
   document.getElementById("statsContent").innerHTML = makeTable(`월별 누적 통계 (${monthKey})`, monthly,totalMonthly);
