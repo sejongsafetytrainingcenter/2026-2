@@ -79,8 +79,9 @@ function selectGroup(group){
   updateCountsFromSheet();
 }
 
-function showOverlay(){
+function showOverlay(message="응답이 완료되었습니다"){
   const overlay = document.getElementById("overlay");
+  overlay.textContent = message;
   overlay.style.display="flex";
   setTimeout(()=>{ overlay.style.display="none"; }, 1000);
 }
@@ -89,7 +90,6 @@ function submitAnswer(answer){
   if(!selectedGroup){ alert("먼저 어떤 친구인지 선택해주세요!"); return; }
   showOverlay();
 
-  // GET 방식으로 파라미터 전송
   const url = `${sheetURL}?date=${today}&group=${selectedGroup}&answer=${answer}`;
   fetch(url)
     .then(res=>res.text())
@@ -110,6 +110,10 @@ function cancelAnswer(){
     .catch(console.error);
 
   lastAnswer=null;
+
+  // 취소 완료 오버레이
+  showOverlay("응답이 취소되었습니다");
+
   updateCountsFromSheet();
 }
 
@@ -135,7 +139,10 @@ function updateCountsFromSheet(){
 
 function requestPassword(){
   const pwd = prompt("관리자 비밀번호를 입력하세요:");
-  if(pwd==="0219"){ document.getElementById("statsTable").style.display="block"; updateCountsFromSheet(); }
+  if(pwd==="0219"){ 
+    document.getElementById("statsTable").style.display="block"; 
+    updateCountsFromSheet(); 
+  }
   else alert("비밀번호가 틀렸습니다.");
 }
 
