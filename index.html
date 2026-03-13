@@ -58,7 +58,7 @@
   </div>
 
 <script>
-const sheetURL = "https://script.google.com/macros/s/AKfycbzYE-5HSC1XrmQAHjUug_9LNxlguYOYk7DUMK40cJetVy2tOyz5YPSCSvA9LrSXINl_cQ/exec";
+const sheetURL = "https://script.google.com/macros/s/AKfycbwQehXNGBkDJ41TnZ1yA9ycrQJhu3l5JUZvoeKtN_SoO24iNGnFTq7G_gG8Tt_ZtaPHMg/exec";
 
 const now = new Date();
 const kst = new Date(now.getTime() + 9*60*60*1000);
@@ -89,50 +89,49 @@ function showOverlay(){
 function submitAnswer(answer){
   if(!selectedGroup){ alert("먼저 어떤 친구인지 선택해주세요!"); return; }
   showOverlay();
-  fetch(sheetURL, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date:today, group:selectedGroup, answer:answer})
-  })
-  .then(res=>res.text())
-  .then(txt=>console.log(txt))
-  .catch(console.error);
+
+  // GET 방식으로 파라미터 전송
+  const url = `${sheetURL}?date=${today}&group=${selectedGroup}&answer=${answer}`;
+  fetch(url)
+    .then(res=>res.text())
+    .then(txt=>console.log(txt))
+    .catch(console.error);
+
   lastAnswer={answer, timestamp:today};
   updateCountsFromSheet();
 }
 
 function cancelAnswer(){
   if(!lastAnswer){ alert("취소할 응답이 없습니다!"); return; }
-  fetch(sheetURL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date:today, group:selectedGroup, answer:"취소"})
-  })
-  .then(res=>res.text())
-  .then(txt=>console.log(txt))
-  .catch(console.error);
+
+  const url = `${sheetURL}?date=${today}&group=${selectedGroup}&answer=취소`;
+  fetch(url)
+    .then(res=>res.text())
+    .then(txt=>console.log(txt))
+    .catch(console.error);
+
   lastAnswer=null;
   updateCountsFromSheet();
 }
 
 function updateCountsFromSheet(){
   fetch(sheetURL)
-  .then(res=>res.json())
-  .then(data=>{
-    if(!Array.isArray(data) || data.length<2) return;
-    const rows = data.slice(1);
-    const daily={"O":0,"△":0,"X":0};
-    const monthly={"O":0,"△":0,"X":0};
-    rows.forEach(row=>{
-      const [date, group, answer]=row;
-      if(group===selectedGroup){
-        if(date===today) daily[answer]=(daily[answer]||0)+1;
-        if(date.startsWith(monthKey)) monthly[answer]=(monthly[answer]||0)+1;
-      }
-    });
-    drawStatsTable(daily, monthly);
-  })
-  .catch(console.error);
+    .then(res=>res.json())
+    .then(data=>{
+      if(!Array.isArray(data) || data.length<2) return;
+      const rows = data.slice(1);
+      const daily={"O":0,"△":0,"X":0};
+      const monthly={"O":0,"△":0,"X":0};
+      rows.forEach(row=>{
+        const [date, group, answer]=row;
+        if(group===selectedGroup){
+          if(date===today) daily[answer]=(daily[answer]||0)+1;
+          if(date.startsWith(monthKey)) monthly[answer]=(monthly[answer]||0)+1;
+        }
+      });
+      drawStatsTable(daily, monthly);
+    })
+    .catch(console.error);
 }
 
 function requestPassword(){
